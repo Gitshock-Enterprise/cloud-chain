@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OcSidebarNav renders navItems into a list 1`] = `
+<div class="oc-app-navigation-expanded" id="web-nav-sidebar">
+  <button aria-label="Toggle sidebar" class="oc-button oc-rounded oc-button-m oc-button-justify-content-center oc-button-gap-m oc-button-passive oc-button-passive-raw toggle-sidebar-button-expanded oc-pr-s toggle-sidebar-button oc-pb-s oc-pt-m" type="button">
+    <!-- @slot Content of the button -->
+    <span class="oc-icon oc-icon-l oc-icon-passive">
+      <!---->
+    </span>
+  </button>
+  <nav aria-label="Sidebar navigation menu" class="oc-sidebar-nav oc-mb-m oc-mt-s oc-px-xs">
+    <ul class="oc-list oc-my-rm oc-mx-rm">
+      <div class="oc-ml-s oc-background-primary-gradient" id="nav-highlighter"></div>
+      <sidebar-nav-item-stub active="true" collapsed="false" filltype="fill" icon="folder" index="00000000000000000000000000000000" name="Personal" target="[object Object]"></sidebar-nav-item-stub>
+      <sidebar-nav-item-stub active="false" collapsed="false" filltype="fill" icon="share-forward" index="00000000000000000000000000000000" name="Shares" target="[object Object]"></sidebar-nav-item-stub>
+      <sidebar-nav-item-stub active="false" collapsed="false" filltype="fill" icon="delete" index="00000000000000000000000000000000" name="Deleted files" target="[object Object]"></sidebar-nav-item-stub>
+    </ul>
+  </nav> <!-- @slot bottom content of the sidebar -->
+  <span class="footer">Footer</span>
+</div>
+`;

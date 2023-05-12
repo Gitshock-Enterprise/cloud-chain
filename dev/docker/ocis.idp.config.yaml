@@ -1,0 +1,26 @@
+clients:
+- id: web
+  name: ownCloud web app
+  application_type: web
+  insecure: yes
+  trusted: yes
+  redirect_uris:
+    - https://host.docker.internal:9200/
+    - https://host.docker.internal:9200/oidc-callback.html
+    - https://host.docker.internal:9200/oidc-silent-redirect.html
+    - https://host.docker.internal:9201/
+    - https://host.docker.internal:9201/oidc-callback.html
+    - https://host.docker.internal:9201/oidc-silent-redirect.html
+  origins:
+    - https://host.docker.internal:9200
+    - https://host.docker.internal:9201
+- id: filepicker
+  name: ownCloud file picker
+  application_type: ""
+  trusted: true
+  secret: ""
+  redirect_uris:
+    - https://host.docker.internal:3000
+    - https://host.docker.internal:3000?redirect=true
+  origins:
+    - https://host.docker.internal:3000

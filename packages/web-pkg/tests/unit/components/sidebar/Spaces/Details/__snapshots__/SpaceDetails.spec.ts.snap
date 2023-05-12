@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Details SideBar Panel displays the details side panel 1`] = `
+<div id="oc-space-details-sidebar">
+  <div class="oc-space-details-sidebar-image oc-text-center">
+    <oc-icon-stub accessiblelabel="" class="space-default-image oc-px-m oc-py-m" color="" filltype="fill" name="layout-grid" size="xxlarge" type="span" variation="passive"></oc-icon-stub>
+  </div>
+  <div class="oc-flex oc-flex-middle oc-space-details-sidebar-members oc-mb-s oc-text-small" style="gap: 15px;">
+    <oc-button-stub appearance="raw" arialabel="Open member list in share panel" disabled="false" gapsize="medium" justifycontent="center" size="medium" submit="button" type="button" variation="passive"></oc-button-stub>
+    <!--v-if-->
+    <p>This space has 1 member.</p>
+    <oc-button-stub appearance="raw" arialabel="Open share panel" disabled="false" gapsize="medium" justifycontent="center" size="small" submit="button" type="button" variation="passive"></oc-button-stub>
+  </div>
+  <table aria-label="Overview of the information about the selected space" class="details-table">
+    <tbody>
+      <tr>
+        <th class="oc-pr-s oc-font-semibold" scope="col">Last activity</th>
+        <td>Invalid DateTime</td>
+      </tr>
+      <!--v-if-->
+      <tr>
+        <th class="oc-pr-s oc-font-semibold" scope="col">Manager</th>
+        <td>
+          <span>alice (me)</span>
+        </td>
+      </tr>
+      <tr>
+        <th class="oc-pr-s oc-font-semibold" scope="col">Quota</th>
+        <td>
+          <space-quota-stub spacequota="[object Object]"></space-quota-stub>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+`;

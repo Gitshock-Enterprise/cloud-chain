@@ -1,0 +1,319 @@
+<template>
+  <div>
+    <oc-text-input
+      id="groups-filter"
+      v-model="filterTerm"
+      class="oc-ml-m oc-my-s"
+      :label="$gettext('Search')"
+      autocomplete="off"
+    />
+    <oc-table
+      ref="tableRef"
+      :sort-by="sortBy"
+      :sort-dir="sortDir"
+      :fields="fields"
+      :data="data"
+      :highlighted="highlighted"
+      :sticky="true"
+      :header-position="fileListHeaderY"
+      :hover="true"
+      @sort="handleSort"
+      @contextmenu-clicked="showContextMenuOnRightClick"
+      @highlight="rowClicked"
+    >
+      <template #selectHeader>
+        <oc-checkbox
+          size="large"
+          class="oc-ml-s"
+          :label="$gettext('Select all groups')"
+          :model-value="allGroupsSelected"
+          hide-label
+          @update:model-value="$emit('toggleSelectAllGroups')"
+        />
+      </template>
+      <template #select="rowData">
+        <oc-checkbox
+          class="oc-ml-s"
+          size="large"
+          :model-value="isGroupSelected(rowData.item)"
+          :option="rowData.item"
+          :label="getSelectGroupLabel(rowData.item)"
+          hide-label
+          @update:model-value="$emit('toggleSelectGroup', rowData.item)"
+          @click.stop
+        />
+      </template>
+      <template #avatar="rowData">
+        <avatar-image :width="32" :userid="rowData.item.id" :user-name="rowData.item.displayName" />
+      </template>
+      <template #displayName="rowData">
+        <div class="oc-flex oc-flex-middle">
+          {{ rowData.item.displayName }}
+          <oc-icon
+            v-if="rowData.item.groupTypes?.includes('ReadOnly')"
+            v-oc-tooltip="readOnlyLabel"
+            name="lock"
+            size="small"
+            fill-type="line"
+            class="oc-ml-s"
+            :accessible-label="readOnlyLabel"
+          />
+        </div>
+      </template>
+      <template #members="rowData">
+        {{ rowData.item.members.length }}
+      </template>
+      <template #actions="{ item }">
+        <oc-button
+          v-oc-tooltip="$gettext('Details')"
+          appearance="raw"
+          class="oc-mr-xs groups-table-btn-details oc-p-xs"
+          @click="showDetails(item)"
+        >
+          <oc-icon name="information" fill-type="line" />
+        </oc-button>
+        <oc-button
+          v-if="!item.groupTypes?.includes('ReadOnly')"
+          v-oc-tooltip="$gettext('Edit')"
+          appearance="raw"
+          class="oc-mr-xs quick-action-button oc-p-xs groups-table-btn-edit"
+          @click="showEditPanel(item)"
+        >
+          <oc-icon name="pencil" fill-type="line" />
+        </oc-button>
+        <context-menu-quick-action
+          ref="contextMenuButtonRef"
+          :item="item"
+          class="groups-table-btn-action-dropdown"
+          @quick-action-clicked="showContextMenuOnBtnClick($event, item)"
+        >
+          <template #contextMenu>
+            <slot name="contextMenu" :group="item" />
+          </template>
+        </context-menu-quick-action>
+      </template>
+      <template #footer>
+        <div class="oc-text-nowrap oc-text-center oc-width-1-1 oc-my-s">
+          <p class="oc-text-muted">{{ footerTextTotal }}</p>
+          <p v-if="filterTerm" class="oc-text-muted">{{ footerTextFilter }}</p>
+        </div>
+      </template>
+    </oc-table>
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, PropType, ref, unref, ComponentPublicInstance, computed } from 'vue'
+import Fuse from 'fuse.js'
+import Mark from 'mark.js'
+import { displayPositionedDropdown, eventBus } from 'web-pkg'
+import { SideBarEventTopics } from 'web-pkg/src/composables/sideBar'
+import { Group } from 'web-client/src/generated'
+import ContextMenuQuickAction from 'web-pkg/src/components/ContextActions/ContextMenuQuickAction.vue'
+import { useGettext } from 'vue3-gettext'
+import { defaultFuseOptions } from 'web-pkg/src/helpers'
+import { useFileListHeaderPosition } from 'web-pkg/src/composables'
+
+export default defineComponent({
+  name: 'GroupsList',
+  components: { ContextMenuQuickAction },
+  props: {
+    groups: {
+      type: Array as PropType<Group[]>,
+      required: true
+    },
+    selectedGroups: {
+      type: Array as PropType<Group[]>,
+      required: true
+    }
+  },
+  emits: ['toggleSelectAllGroups', 'unSelectAllGroups', 'toggleSelectGroup'],
+  setup(props, { emit }) {
+    const { $gettext } = useGettext()
+    const { y: fileListHeaderY } = useFileListHeaderPosition('#admin-settings-app-bar')
+    const contextMenuButtonRef = ref(undefined)
+
+    const isGroupSelected = (group) => {
+      return props.selectedGroups.some((s) => s.id === group.id)
+    }
+    const selectGroup = (group) => {
+      emit('unSelectAllGroups')
+      emit('toggleSelectGroup', group)
+    }
+    const showDetails = (group) => {
+      if (!isGroupSelected(group)) {
+        selectGroup(group)
+      }
+      eventBus.publish(SideBarEventTopics.open)
+    }
+    const rowClicked = (data) => {
+      const group = data[0]
+      if (!isGroupSelected(group)) {
+        selectGroup(group)
+      }
+    }
+    const showContextMenuOnBtnClick = (data, group) => {
+      const { dropdown, event } = data
+      if (dropdown?.tippy === undefined) {
+        return
+      }
+      if (!isGroupSelected(group)) {
+        selectGroup(group)
+      }
+      displayPositionedDropdown(dropdown.tippy, event, unref(contextMenuButtonRef))
+    }
+    const showContextMenuOnRightClick = (row, event, group) => {
+      event.preventDefault()
+      const dropdown = row.$el.getElementsByClassName('groups-table-btn-action-dropdown')[0]
+      if (dropdown === undefined) {
+        return
+      }
+      if (!isGroupSelected(group)) {
+        selectGroup(group)
+      }
+      displayPositionedDropdown(dropdown._tippy, event, unref(contextMenuButtonRef))
+    }
+
+    const showEditPanel = (group) => {
+      if (!isGroupSelected(group)) {
+        selectGroup(group)
+      }
+      eventBus.publish(SideBarEventTopics.openWithPanel, 'EditPanel')
+    }
+
+    const readOnlyLabel = computed(() => $gettext("This group is read-only and can't be edited"))
+
+    return {
+      showDetails,
+      rowClicked,
+      isGroupSelected,
+      showContextMenuOnBtnClick,
+      showContextMenuOnRightClick,
+      fileListHeaderY,
+      contextMenuButtonRef,
+      showEditPanel,
+      readOnlyLabel
+    }
+  },
+  data() {
+    return {
+      sortBy: 'displayName',
+      sortDir: 'asc',
+      markInstance: null,
+      filterTerm: ''
+    }
+  },
+  computed: {
+    fields() {
+      return [
+        {
+          name: 'select',
+          title: '',
+          type: 'slot',
+          width: 'shrink',
+          headerType: 'slot'
+        },
+        {
+          name: 'avatar',
+          title: '',
+          type: 'slot',
+          width: 'shrink'
+        },
+        {
+          name: 'displayName',
+          title: this.$gettext('Group name'),
+          type: 'slot',
+          sortable: true
+        },
+        {
+          name: 'members',
+          title: this.$gettext('Members'),
+          type: 'slot',
+          sortable: true
+        },
+        {
+          name: 'actions',
+          title: this.$gettext('Actions'),
+          sortable: false,
+          type: 'slot',
+          alignH: 'right'
+        }
+      ]
+    },
+    allGroupsSelected() {
+      return this.groups.length === this.selectedGroups.length
+    },
+    footerTextTotal() {
+      return this.$gettext('%{groupCount} groups in total', {
+        groupCount: this.groups.length.toString()
+      })
+    },
+    footerTextFilter() {
+      return this.$gettext('%{groupCount} matching groups', {
+        groupCount: this.data.length.toString()
+      })
+    },
+    data() {
+      return this.orderBy(
+        this.filter(this.groups, this.filterTerm),
+        this.sortBy,
+        this.sortDir === 'desc'
+      )
+    },
+    highlighted() {
+      return this.selectedGroups.map((group) => group.id)
+    }
+  },
+  watch: {
+    filterTerm() {
+      if (!this.markInstance) {
+        return
+      }
+      this.markInstance.unmark()
+      this.markInstance.mark(this.filterTerm, {
+        element: 'span',
+        className: 'highlight-mark',
+        exclude: ['th *', 'tfoot *']
+      })
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.markInstance = new Mark((this.$refs.tableRef as ComponentPublicInstance).$el)
+    })
+  },
+  methods: {
+    filter(groups, filterTerm) {
+      if (!(filterTerm || '').trim()) {
+        return groups
+      }
+      const groupsSearchEngine = new Fuse(groups, { ...defaultFuseOptions, keys: ['displayName'] })
+      return groupsSearchEngine.search(filterTerm).map((r) => r.item)
+    },
+    orderBy(list, prop, desc) {
+      return [...list].sort((a, b) => {
+        a = a[prop]?.toString() || ''
+        b = b[prop]?.toString() || ''
+        return desc ? b.localeCompare(a) : a.localeCompare(b)
+      })
+    },
+    handleSort(event) {
+      this.sortBy = event.sortBy
+      this.sortDir = event.sortDir
+    },
+    getSelectGroupLabel(group) {
+      return this.$gettext('Select %{ group }', { group: group.displayName }, true)
+    }
+  }
+})
+</script>
+
+<style lang="scss">
+#groups-filter {
+  width: 16rem;
+}
+
+.highlight-mark {
+  font-weight: 600;
+}
+</style>
